@@ -379,35 +379,6 @@ body{
 
 <script>
 
-// --- CÓDIGO DE RESTRIÇÃO DE DOMÍNIO (CORREÇÃO FINAL) ---
-
-// Domínios permitidos (APENAS DOMÍNIOS PRINCIPAIS ENTRE ASPAS E SEPARADOS POR VÍRGULA)
-const DOMINIOS_PERMITIDOS = [
-    "club.hotmart.com",   // Essencial: O domínio da área de membros
-    "hotmart.com",        // Domínio principal para cobrir variações de URL
-    "app.hotmart.com"     // Domínio de gerenciamento/app da Hotmart
-];
-
-// O restante do código de verificação
-const urlDeOrigem = window.parent.location.hostname;
-let acessoPermitido = false;
-
-for (const dominio of DOMINIOS_PERMITIDOS) {
-    if (urlDeOrigem.includes(dominio)) {
-        acessoPermitido = true;
-        break; 
-    }
-}
-
-if (!acessoPermitido) {
-    document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;">' +
-                              '<h1>⛔ Acesso Negado</h1>' +
-                              '<p>Conteúdo exclusivo para alunos. Por favor, acesse através do link oficial da Hotmart Club.</p>' +
-                              '</div>';
-    
-    throw new Error('Restrição de domínio ativada. Aplicação interrompida.'); 
-}
-// O seu código do teclado vem APÓS este bloco.
 
 /* ==========================================================================
    CONFIGURAÇÃO INICIAL E VARIÁVEIS
