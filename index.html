@@ -379,17 +379,68 @@ body{
 // --- CÓDIGO DE SEGURANÇA CHAVE SECRETA (SIMPLES E UNIVERSAL) ---
 
 const CHAVE_SECRETA_ESPERADA = "TECLADO_SECRETO_2025"; 
+const CHAVE_ACESSO_LOCAL = "teclado_access_token";
+const TEMPO_VALIDADE_DIAS = 366; 
 
-const params = new URLSearchParams(window.location.search);
-const chaveRecebida = params.get('key');
+const urlParams = new URLSearchParams(window.location.search);
+const chaveRecebida = urlParams.get('key');
+const urlAtualLimpa = window.location.origin + window.location.pathname; // URL sem a chave
 
-if (chaveRecebida !== CHAVE_SECRETA_ESPERADA) {
+let acessoValidado = false;
+
+// 1. TENTA VALIDAR PELO ARMAZENAMENTO LOCAL (ACESSOS SUBSEQUENTES)
+try {
+    const tokenSalvo = localStorage.getItem(CHAVE_ACESSO_LOCAL);
+    if (tokenSalvo) {
+        const dataExpiracao = new Date(JSON.parse(tokenSalvo).exp);
+        
+        if (dataExpiracao > new Date()) {
+            acessoValidado = true;
+        } else {
+            // Token expirado, remove e exige nova validação
+            localStorage.removeItem(CHAVE_ACESSO_LOCAL); 
+        }
+    }
+} catch (e) {}
+
+// 2. SE NÃO VALIDADO, TENTA VALIDAR PELA CHAVE SECRETA (PRIMEIRO ACESSO)
+if (!acessoValidado) {
+    if (chaveRecebida === CHAVE_SECRETA_ESPERADA) {
+        
+        // ** SEGREDO: SALVAR O REGISTRO DO DISPOSITIVO **
+        const dataExpiracao = new Date();
+        dataExpiracao.setDate(dataExpiracao.getDate() + TEMPO_VALIDADE_DIAS);
+        const novoToken = { validado: true, exp: dataExpiracao.toISOString() };
+        localStorage.setItem(CHAVE_ACESSO_LOCAL, JSON.stringify(novoToken));
+        
+        acessoValidado = true;
+
+        // ** AÇÃO 3: LIMPEZA DA URL E RECARGA **
+        // Mostra a mensagem e força o redirect (limpando a chave da URL)
+        document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;">' +
+                                  '<h1>✅ Acesso Confirmado!</h1>' +
+                                  '<p>Seu dispositivo foi registrado. O Teclado será carregado automaticamente...</p>' +
+                                  '<p>Se o carregamento não ocorrer, <a href="' + urlAtualLimpa + '">clique aqui para continuar.</a></p>' +
+                                  '</div>';
+        
+        // Recarrega em 2 segundos para limpar a URL
+        setTimeout(function() {
+            window.location.replace(urlAtualLimpa);
+        }, 2000); 
+
+        // IMPORTANTE: Bloqueia o carregamento do jogo ATÉ que a recarga ocorra
+        throw new Error('Chave válida, registrando dispositivo e limpando URL.');
+    }
+}
+
+// 3. SE AINDA NÃO VALIDOU, BLOQUEIA (ACESSO DIRETO OU CHAVE ERRADA)
+if (!acessoValidado) {
     document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;">' +
                               '<h1>⛔ Acesso Negado</h1>' +
-                              '<p>Conteúdo exclusivo para alunos. Chave de acesso inválida.</p>' +
+                              '<p>Conteúdo exclusivo. Acesse a lição na Hotmart para liberar o acesso.</p>' +
                               '</div>';
     
-    throw new Error('Acesso não autorizado. Chave inválida.');
+    throw new Error('Acesso não autorizado. Chave inválida ou ausente.'); 
 }
 
 // O restante do código do teclado será executado aqui SOMENTE se a chave for válida.
@@ -1080,6 +1131,7 @@ statusBox.textContent='Modo: Falante — pressione uma tecla ou clique.';
 
 </body>
 </html>
+
 
 
 
