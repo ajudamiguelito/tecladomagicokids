@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
@@ -378,21 +378,27 @@ body{
 
 // --- NOVO CÓDIGO DE SEGURANÇA (POR CHAVE SECRETA) ---
 
-const CHAVE_SECRETA_ESPERADA = "TECLADO_SECRETO_2025"; // A CHAVE DEVE SER IGUAL AO IFRAME
+// --- CÓDIGO DE DIAGNÓSTICO (TEMPORÁRIO) ---
 
+// 1. Pega a URL COMPLETA que o Netlify está processando
+const urlRecebida = window.location.href;
+
+// 2. Tenta obter a chave secreta
 const params = new URLSearchParams(window.location.search);
-const chaveRecebida = params.get('key'); // Pega a chave do link
+const chaveRecebida = params.get('key');
 
-// Verifica se a chave recebida é a chave secreta
-if (chaveRecebida !== CHAVE_SECRETA_ESPERADA) {
-    // Bloqueia se a chave estiver faltando ou incorreta (acesso direto pelo PC)
-    document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;">' +
-                              '<h1>⛔ Acesso Negado</h1>' +
-                              '<p>Conteúdo exclusivo para alunos. Chave de acesso inválida.</p>' +
-                              '</div>';
-    
-    throw new Error('Acesso não autorizado. Chave secreta faltando ou incorreta.'); 
-}
+// 3. Exibe as informações importantes (SUBSTITUI O SEU JOGO!)
+document.body.innerHTML = '<div style="text-align: left; padding: 20px; font-family: sans-serif;">' +
+                          '<h1>🔍 DIAGNÓSTICO DE URL</h1>' +
+                          '<hr>' +
+                          '<p><strong>URL COMPLETA RECEBIDA:</strong> <br>' + urlRecebida + '</p>' +
+                          '<p><strong>PARÂMETRO "key" ENCONTRADO:</strong> <br>' + chaveRecebida + '</p>' +
+                          '<p style="color: red;"><strong>STATUS:</strong> Se a chave acima for nula ou errada, o acesso seria NEGADO.</p>' +
+                          '</div>';
+
+// O restante do código de verificação é ignorado por enquanto.
+
+// --- FIM DO CÓDIGO DE DIAGNÓSTICO ---
 // O seu código do teclado vem APÓS este bloco.
 
 /* ==========================================================================
@@ -1080,4 +1086,5 @@ statusBox.textContent='Modo: Falante — pressione uma tecla ou clique.';
 
 </body>
 </html>
+
 
