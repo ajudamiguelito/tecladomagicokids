@@ -376,63 +376,23 @@ body{
 
 <script>
 
-// --- CÓDIGO DE SEGURANÇA HÍBRIDA (Referenciador + Armazenamento Local) ---
+// --- CÓDIGO DE SEGURANÇA CHAVE SECRETA (SIMPLES E UNIVERSAL) ---
 
-const DOMINIOS_PERMITIDOS = [
-    "hotmart.com",
-    "club.hotmart.com"
-];
-const CHAVE_ACESSO_LOCAL = "teclado_access_token";
-const URL_REFERER = document.referrer; 
-const TEMPO_VALIDADE_DIAS = 366; 
+const CHAVE_SECRETA_ESPERADA = "TECLADO_SECRETO_2025"; 
 
-let acessoValidado = false;
+const params = new URLSearchParams(window.location.search);
+const chaveRecebida = params.get('key');
 
-// 1. TENTA VALIDAR PELO ARMAZENAMENTO LOCAL (Acesso Direto)
-try {
-    const tokenSalvo = localStorage.getItem(CHAVE_ACESSO_LOCAL);
-    if (tokenSalvo) {
-        const dataExpiracao = new Date(JSON.parse(tokenSalvo).exp);
-        
-        if (dataExpiracao > new Date()) {
-            acessoValidado = true;
-        } else {
-            localStorage.removeItem(CHAVE_ACESSO_LOCAL); 
-        }
-    }
-} catch (e) {}
-
-
-// 2. SE NÃO VALIDOU, TENTA VALIDAR PELA HOTMART (Referenciador)
-if (!acessoValidado) {
-    for (const dominio of DOMINIOS_PERMITIDOS) {
-        if (URL_REFERER.includes(dominio)) {
-            acessoValidado = true;
-            
-            // Gerar novo token de acesso
-            const dataExpiracao = new Date();
-            dataExpiracao.setDate(dataExpiracao.getDate() + TEMPO_VALIDADE_DIAS);
-            
-            const novoToken = {
-                validado: true,
-                exp: dataExpiracao.toISOString()
-            };
-            
-            localStorage.setItem(CHAVE_ACESSO_LOCAL, JSON.stringify(novoToken));
-            break; 
-        }
-    }
-}
-
-// 3. SE AINDA NÃO VALIDOU, BLOQUEIA
-if (!acessoValidado) {
+if (chaveRecebida !== CHAVE_SECRETA_ESPERADA) {
     document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;">' +
                               '<h1>⛔ Acesso Negado</h1>' +
-                              '<p>Conteúdo exclusivo. Por favor, acesse a lição na Hotmart para liberar o acesso por 366 dias.</p>' +
+                              '<p>Conteúdo exclusivo para alunos. Chave de acesso inválida.</p>' +
                               '</div>';
     
-    throw new Error('Acesso não autorizado. Tentativa de bypass.'); 
+    throw new Error('Acesso não autorizado. Chave inválida.');
 }
+
+// O restante do código do teclado será executado aqui SOMENTE se a chave for válida.
 // O seu código do teclado vem APÓS este bloco.
 
 /* ==========================================================================
@@ -1120,6 +1080,7 @@ statusBox.textContent='Modo: Falante — pressione uma tecla ou clique.';
 
 </body>
 </html>
+
 
 
 
