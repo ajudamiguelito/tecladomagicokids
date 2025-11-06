@@ -376,34 +376,22 @@ body{
 
 <script>
 
-// --- TRECHO PARA SUBSTITUIR (COMO OBTER A URL) ---
+// --- NOVO CÓDIGO DE SEGURANÇA (POR CHAVE SECRETA) ---
 
-// NOVO: Usa a URL COMPLETA para a verificação, não apenas o hostname.
-// Acesso a window.parent.location.href é mais seguro para pegar a URL de origem.
-let urlDeOrigem = '';
-try {
-    urlDeOrigem = window.parent.location.href;
-} catch (e) {
-    // Se falhar (acesso direto, bloqueado pelo CORS), usa a URL local.
-    urlDeOrigem = window.location.href;
-}
+const CHAVE_SECRETA_ESPERADA = "TECLADO_SECRETO_2025"; // A CHAVE DEVE SER IGUAL AO IFRAME
 
-// Domínios permitidos (AGORA USAMOS O TRECHO COMPLETO DA URL)
-// MANTENHA SÓ OS TRECHOS PRINCIPAIS
-const DOMINIOS_PERMITIDOS = [
-    "club.hotmart.com",
-    "hotmart.com"
-];
+const params = new URLSearchParams(window.location.search);
+const chaveRecebida = params.get('key'); // Pega a chave do link
 
-let acessoPermitido = false;
-
-// O loop agora verifica se A URL COMPLETA contém o domínio permitido
-for (const dominio of DOMINIOS_PERMITIDOS) {
-    // Verifica se a URL de origem (COMPLETA) inclui o domínio permitido
-    if (urlDeOrigem.includes(dominio)) {
-        acessoPermitido = true;
-        break;
-    }
+// Verifica se a chave recebida é a chave secreta
+if (chaveRecebida !== CHAVE_SECRETA_ESPERADA) {
+    // Bloqueia se a chave estiver faltando ou incorreta (acesso direto pelo PC)
+    document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;">' +
+                              '<h1>⛔ Acesso Negado</h1>' +
+                              '<p>Conteúdo exclusivo para alunos. Chave de acesso inválida.</p>' +
+                              '</div>';
+    
+    throw new Error('Acesso não autorizado. Chave secreta faltando ou incorreta.'); 
 }
 // O seu código do teclado vem APÓS este bloco.
 
@@ -1092,3 +1080,4 @@ statusBox.textContent='Modo: Falante — pressione uma tecla ou clique.';
 
 </body>
 </html>
+
