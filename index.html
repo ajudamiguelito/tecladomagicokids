@@ -378,36 +378,68 @@ body{
 
 // --- NOVO CÓDIGO DE SEGURANÇA (POR CHAVE SECRETA) ---
 
-// --- CÓDIGO DE RESTRIÇÃO DE DOMÍNIO (FINAL E ROBUSTO) ---
+// --- CÓDIGO DE SEGURANÇA HÍBRIDA (Referenciador + Armazenamento Local) ---
 
-// Domínios permitidos:
 const DOMINIOS_PERMITIDOS = [
     "hotmart.com",
     "club.hotmart.com"
 ];
+const CHAVE_ACESSO_LOCAL = "teclado_access_token";
+const URL_REFERER = document.referrer; 
+const TEMPO_VALIDADE_DIAS = 366; // 366 dias
 
-// Pega a URL de onde o aluno acabou de clicar (o referenciador)
-const urlReferer = document.referrer; 
-let acessoPermitido = false;
+let acessoValidado = false;
 
-// Verifica se a URL de origem contém um dos domínios permitidos
-for (const dominio of DOMINIOS_PERMITIDOS) {
-    if (urlReferer.includes(dominio)) {
-        acessoPermitido = true;
-        break; 
+// 1. TENTA VALIDAR PELO ARMAZENAMENTO LOCAL (Acesso Direto)
+try {
+    const tokenSalvo = localStorage.getItem(CHAVE_ACESSO_LOCAL);
+    if (tokenSalvo) {
+        const dataExpiracao = new Date(JSON.parse(tokenSalvo).exp);
+        
+        if (dataExpiracao > new Date()) {
+            acessoValidado = true;
+            // console.log("Acesso Liberado via Token Local.");
+        } else {
+            // Token expirado, será necessário um novo acesso via Hotmart.
+            localStorage.removeItem(CHAVE_ACESSO_LOCAL); 
+        }
+    }
+} catch (e) {
+    // Falha ao ler o localStorage (ignora e tenta a validação Hotmart)
+}
+
+
+// 2. SE NÃO VALIDOU, TENTA VALIDAR PELA HOTMART (Referenciador)
+if (!acessoValidado) {
+    for (const dominio of DOMINIOS_PERMITIDOS) {
+        if (URL_REFERER.includes(dominio)) {
+            acessoValidado = true;
+            
+            // Gerar novo token de acesso (validade de 366 dias)
+            const dataExpiracao = new Date();
+            dataExpiracao.setDate(dataExpiracao.getDate() + TEMPO_VALIDADE_DIAS);
+            
+            const novoToken = {
+                validado: true,
+                exp: dataExpiracao.toISOString()
+            };
+            
+            localStorage.setItem(CHAVE_ACESSO_LOCAL, JSON.stringify(novoToken));
+            // console.log("Acesso Liberado e Token Local Salvo.");
+            break; 
+        }
     }
 }
 
-// Se o acesso NÃO vier da Hotmart, bloqueia (acesso direto é bloqueado)
-if (!acessoPermitido) {
+// 3. SE AINDA NÃO VALIDOU, BLOQUEIA
+if (!acessoValidado) {
     document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;">' +
                               '<h1>⛔ Acesso Negado</h1>' +
-                              '<p>Conteúdo exclusivo. Por favor, acesse através do link oficial da Hotmart Club.</p>' +
+                              '<p>Conteúdo exclusivo. Por favor, acesse a lição na Hotmart para liberar o acesso por 366 dias.</p>' +
                               '</div>';
     
-    throw new Error('Restrição de domínio ativada. Aplicação interrompida.'); 
+    throw new Error('Acesso não autorizado. Tentativa de bypass.'); 
 }
-// O restante do código do teclado (o jogo em si) será executado aqui.
 // O seu código do teclado vem APÓS este bloco.
 
 /* ==========================================================================
@@ -1095,6 +1127,7 @@ statusBox.textContent='Modo: Falante — pressione uma tecla ou clique.';
 
 </body>
 </html>
+
 
 
 
