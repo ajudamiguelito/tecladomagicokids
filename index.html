@@ -376,8 +376,6 @@ body{
 
 <script>
 
-// --- NOVO CÓDIGO DE SEGURANÇA (POR CHAVE SECRETA) ---
-
 // --- CÓDIGO DE SEGURANÇA HÍBRIDA (Referenciador + Armazenamento Local) ---
 
 const DOMINIOS_PERMITIDOS = [
@@ -386,7 +384,7 @@ const DOMINIOS_PERMITIDOS = [
 ];
 const CHAVE_ACESSO_LOCAL = "teclado_access_token";
 const URL_REFERER = document.referrer; 
-const TEMPO_VALIDADE_DIAS = 366; // 366 dias
+const TEMPO_VALIDADE_DIAS = 366; 
 
 let acessoValidado = false;
 
@@ -398,15 +396,11 @@ try {
         
         if (dataExpiracao > new Date()) {
             acessoValidado = true;
-            // console.log("Acesso Liberado via Token Local.");
         } else {
-            // Token expirado, será necessário um novo acesso via Hotmart.
             localStorage.removeItem(CHAVE_ACESSO_LOCAL); 
         }
     }
-} catch (e) {
-    // Falha ao ler o localStorage (ignora e tenta a validação Hotmart)
-}
+} catch (e) {}
 
 
 // 2. SE NÃO VALIDOU, TENTA VALIDAR PELA HOTMART (Referenciador)
@@ -415,7 +409,7 @@ if (!acessoValidado) {
         if (URL_REFERER.includes(dominio)) {
             acessoValidado = true;
             
-            // Gerar novo token de acesso (validade de 366 dias)
+            // Gerar novo token de acesso
             const dataExpiracao = new Date();
             dataExpiracao.setDate(dataExpiracao.getDate() + TEMPO_VALIDADE_DIAS);
             
@@ -425,7 +419,6 @@ if (!acessoValidado) {
             };
             
             localStorage.setItem(CHAVE_ACESSO_LOCAL, JSON.stringify(novoToken));
-            // console.log("Acesso Liberado e Token Local Salvo.");
             break; 
         }
     }
@@ -1127,6 +1120,7 @@ statusBox.textContent='Modo: Falante — pressione uma tecla ou clique.';
 
 </body>
 </html>
+
 
 
 
