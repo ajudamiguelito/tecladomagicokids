@@ -378,27 +378,36 @@ body{
 
 // --- NOVO CÓDIGO DE SEGURANÇA (POR CHAVE SECRETA) ---
 
-// --- CÓDIGO DE DIAGNÓSTICO (TEMPORÁRIO) ---
+// --- CÓDIGO DE RESTRIÇÃO DE DOMÍNIO (FINAL E ROBUSTO) ---
 
-// 1. Pega a URL COMPLETA que o Netlify está processando
-const urlRecebida = window.location.href;
+// Domínios permitidos:
+const DOMINIOS_PERMITIDOS = [
+    "hotmart.com",
+    "club.hotmart.com"
+];
 
-// 2. Tenta obter a chave secreta
-const params = new URLSearchParams(window.location.search);
-const chaveRecebida = params.get('key');
+// Pega a URL de onde o aluno acabou de clicar (o referenciador)
+const urlReferer = document.referrer; 
+let acessoPermitido = false;
 
-// 3. Exibe as informações importantes (SUBSTITUI O SEU JOGO!)
-document.body.innerHTML = '<div style="text-align: left; padding: 20px; font-family: sans-serif;">' +
-                          '<h1>🔍 DIAGNÓSTICO DE URL</h1>' +
-                          '<hr>' +
-                          '<p><strong>URL COMPLETA RECEBIDA:</strong> <br>' + urlRecebida + '</p>' +
-                          '<p><strong>PARÂMETRO "key" ENCONTRADO:</strong> <br>' + chaveRecebida + '</p>' +
-                          '<p style="color: red;"><strong>STATUS:</strong> Se a chave acima for nula ou errada, o acesso seria NEGADO.</p>' +
-                          '</div>';
+// Verifica se a URL de origem contém um dos domínios permitidos
+for (const dominio of DOMINIOS_PERMITIDOS) {
+    if (urlReferer.includes(dominio)) {
+        acessoPermitido = true;
+        break; 
+    }
+}
 
-// O restante do código de verificação é ignorado por enquanto.
-
-// --- FIM DO CÓDIGO DE DIAGNÓSTICO ---
+// Se o acesso NÃO vier da Hotmart, bloqueia (acesso direto é bloqueado)
+if (!acessoPermitido) {
+    document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;">' +
+                              '<h1>⛔ Acesso Negado</h1>' +
+                              '<p>Conteúdo exclusivo. Por favor, acesse através do link oficial da Hotmart Club.</p>' +
+                              '</div>';
+    
+    throw new Error('Restrição de domínio ativada. Aplicação interrompida.'); 
+}
+// O restante do código do teclado será executado aqui.
 // O seu código do teclado vem APÓS este bloco.
 
 /* ==========================================================================
@@ -1086,5 +1095,6 @@ statusBox.textContent='Modo: Falante — pressione uma tecla ou clique.';
 
 </body>
 </html>
+
 
 
