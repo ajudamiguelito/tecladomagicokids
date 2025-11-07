@@ -382,9 +382,9 @@ const CHAVE_SECRETA_ESPERADA = "TECLADO_SECRETO_2025";
 const CHAVE_ACESSO_LOCAL = "teclado_access_token";
 const TEMPO_VALIDADE_DIAS = 366; 
 
+// Pega os parâmetros da URL. Verifica 'key' e 'chave'.
 const urlParams = new URLSearchParams(window.location.search);
-const chaveRecebida = urlParams.get('key');
-const urlAtualLimpa = window.location.origin + window.location.pathname; // URL sem a chave
+const chaveRecebida = urlParams.get('key') || urlParams.get('chave');
 
 let acessoValidado = false;
 
@@ -415,31 +415,38 @@ if (!acessoValidado) {
         
         acessoValidado = true;
 
-        // ** AÇÃO 3: LIMPEZA DA URL E RECARGA **
-        // Mostra a mensagem e força o redirect (limpando a chave da URL)
-        document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;">' +
-                                  '<h1>✅ Acesso Confirmado!</h1>' +
-                                  '<p>Seu dispositivo foi registrado. O Teclado será carregado automaticamente...</p>' +
-                                  '<p>Se o carregamento não ocorrer, <a href="' + urlAtualLimpa + '">clique aqui para continuar.</a></p>' +
-                                  '</div>';
-        
-        // Recarrega em 2 segundos para limpar a URL
-        setTimeout(function() {
-            window.location.replace(urlAtualLimpa);
-        }, 2000); 
-
-        // IMPORTANTE: Bloqueia o carregamento do jogo ATÉ que a recarga ocorra
-        throw new Error('Chave válida, registrando dispositivo e limpando URL.');
+        // AÇÃO 3: LIMPEZA DA URL E RECARGA (REMOVIDO CÓDIGO DE RECARGA ANTIGO)
+        // A limpeza ocorrerá no bloco abaixo para evitar duplicação.
     }
 }
 
-// 3. SE AINDA NÃO VALIDOU, BLOQUEIA (ACESSO DIRETO OU CHAVE ERRADA)
+// ----------------------------------------------------------------------
+// NOVO BLOCO: LIMPEZA DA URL (EXECUTAR SEMPRE QUE A CHAVE ESTIVER PRESENTE)
+// Esta lógica garante que a URL seja limpa *após* a validação, mesmo que
+// o acesso já estivesse validado pelo localStorage, mas a chave foi reenviada.
+// ----------------------------------------------------------------------
+if (chaveRecebida) {
+    const url = new URL(window.location.href);
+    
+    // Constrói a URL limpa, usando apenas a origem, o caminho e o hash.
+    // Isso descarta completamente o search (?key=...) e qualquer outro parâmetro.
+    const novaUrlLimpa = url.origin + url.pathname + url.hash; 
+
+    // Atualiza a URL no histórico SEM recarregar a página (Melhor UX)
+    window.history.replaceState({}, document.title, novaUrlLimpa);
+
+    console.log(`Chave detectada e removida da URL: ${chaveRecebida}`);
+}
+
+
+// 3. BLOQUEIO FINAL: SE AINDA NÃO VALIDOU, BLOQUEIA O JOGO.
 if (!acessoValidado) {
     document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;">' +
-                              '<h1>⛔ Acesso Negado</h1>' +
-                              '<p>Conteúdo exclusivo. Acesse a lição na Hotmart para liberar o acesso.</p>' +
-                              '</div>';
+                                 '<h1>⛔ Acesso Negado</h1>' +
+                                 '<p>Conteúdo exclusivo. Acesse a lição na Hotmart para liberar o acesso.</p>' +
+                                 '</div>';
     
+    // Impede que o restante do script (código do jogo) seja executado
     throw new Error('Acesso não autorizado. Chave inválida ou ausente.'); 
 }
 
@@ -1136,6 +1143,7 @@ statusBox.textContent='Modo: Falante — pressione uma tecla ou clique.';
 
 </body>
 </html>
+
 
 
 
