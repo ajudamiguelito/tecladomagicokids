@@ -378,96 +378,67 @@ body{
 
 // --- CÓDIGO DE SEGURANÇA COM MÚLTIPLAS CHAVES E VALIDADES ---
 
-// 1. CONFIGURAÇÃO DAS CHAVES
-//    Aqui você define quais chaves secretas são válidas e quantos dias de acesso cada uma concede.
-//    A "chave" é o texto que vai na URL (ex: ?key=SUA_CHAVE_SECRETA).
-//    O "valor" é o número de dias de validade.
+// --- CÓDIGO DE SEGURANÇA v3 (COM DIAGNÓSTICO AVANÇADO) ---
+
+// 1. CONFIGURAÇÃO DAS CHAVES E VALIDADES
 const CHAVES_VALIDAS = {
-  "TECLADO_SECRETO_2025": 366, // Chave principal, concede acesso por 1 ano.
-  "ACESSO_30_DIAS": 30         // Nova chave, concede acesso por 30 dias.
+  "TECLADO_SECRETO_2025": 366,
+  "ACESSO_30_DIAS": 30
 };
+const CHAVE_ACESSO_LOCAL = "teclado_access_token";
 
-const CHAVE_ACESSO_LOCAL = "teclado_access_token"; // Nome do "token" que fica salvo no navegador.
-
-// 2. LEITURA DA URL
-//    Pega os parâmetros da URL para encontrar uma chave de acesso.
-//    Funciona com "?key=" ou "?chave=".
+// 2. LEITURA DA CHAVE NA URL
 const urlParams = new URLSearchParams(window.location.search);
 const chaveRecebida = urlParams.get('key') || urlParams.get('chave');
 
-let acessoValidado = false; // Começa como falso. Só se torna verdadeiro se a validação passar.
+// ==================================================================
+// INÍCIO DO DIAGNÓSTICO - Estas linhas nos ajudarão a ver o problema
+console.log("--- INICIANDO DIAGNÓSTICO DE CHAVE ---");
+console.log("Chave recebida da URL:", chaveRecebida);
+console.log("A chave recebida está na lista de chaves válidas?", Object.keys(CHAVES_VALIDAS).includes(chaveRecebida));
+console.log("-----------------------------------------");
+// FIM DO DIAGNÓSTICO
+// ==================================================================
 
-// 3. VALIDAÇÃO PELO ARMAZENAMENTO LOCAL (ACESSOS FUTUROS)
-//    Primeiro, tenta encontrar um token já salvo no navegador do usuário.
-try {
-    const tokenSalvo = localStorage.getItem(CHAVE_ACESSO_LOCAL);
-    if (tokenSalvo) {
-        const dataExpiracao = new Date(JSON.parse(tokenSalvo).exp);
-        
-        // Se a data de expiração do token ainda não passou, o acesso é liberado.
-        if (dataExpiracao > new Date()) {
-            acessoValidado = true;
-        } else {
-            // Se o token já expirou, ele é removido e o usuário precisará de uma nova chave.
-            localStorage.removeItem(CHAVE_ACESSO_LOCAL); 
+let acessoValidado = false;
+
+// 3. LÓGICA DE VALIDAÇÃO
+if (chaveRecebida && Object.keys(CHAVES_VALIDAS).includes(chaveRecebida)) {
+    const diasDeValidade = CHAVES_VALIDAS[chaveRecebida];
+    const dataExpiracao = new Date();
+    dataExpiracao.setDate(dataExpiracao.getDate() + diasDeValidade);
+    const novoToken = { validado: true, exp: dataExpiracao.toISOString() };
+    localStorage.setItem(CHAVE_ACESSO_LOCAL, JSON.stringify(novoToken));
+    acessoValidado = true;
+}
+
+if (!acessoValidado) {
+    try {
+        const tokenSalvo = localStorage.getItem(CHAVE_ACESSO_LOCAL);
+        if (tokenSalvo) {
+            const dataExpiracao = new Date(JSON.parse(tokenSalvo).exp);
+            if (dataExpiracao > new Date()) {
+                acessoValidado = true;
+            } else {
+                localStorage.removeItem(CHAVE_ACESSO_LOCAL);
+            }
         }
-    }
-} catch (e) {
-    // Ignora erros que possam ocorrer em navegadores muito antigos ou com configurações de privacidade rígidas.
+    } catch (e) { /* Ignora erros */ }
 }
 
-// 4. VALIDAÇÃO PELA CHAVE DA URL (PRIMEIRO ACESSO)
-//    Este bloco só executa se o usuário ainda não foi validado pelo token local.
-if (!acessoValidado && chaveRecebida) {
-    
-    // Verifica se a chave recebida na URL existe na nossa lista de CHAVES_VALIDAS.
-    if (Object.keys(CHAVES_VALIDAS).includes(chaveRecebida)) {
-        
-        // Se a chave é válida, pega o número de dias correspondente a ela.
-        const diasDeValidade = CHAVES_VALIDAS[chaveRecebida];
-
-        // ** SEGREDO: SALVAR O REGISTRO DO DISPOSITIVO **
-        // Calcula a data de expiração somando os dias de validade à data atual.
-        const dataExpiracao = new Date();
-        dataExpiracao.setDate(dataExpiracao.getDate() + diasDeValidade);
-        
-        // Cria o token com a data de expiração e o salva no navegador do usuário.
-        const novoToken = { validado: true, exp: dataExpiracao.toISOString() };
-        localStorage.setItem(CHAVE_ACESSO_LOCAL, JSON.stringify(novoToken));
-        
-        // Libera o acesso.
-        acessoValidado = true;
-    }
-}
-
-// 5. LIMPEZA DA URL
-//    Este bloco é executado sempre que uma chave for detectada na URL, para removê-la.
-//    Isso impede que o usuário copie e compartilhe o link com a chave de acesso.
+// 4. LIMPEZA DA URL
 if (chaveRecebida) {
     const url = new URL(window.location.href);
     const novaUrlLimpa = url.origin + url.pathname + url.hash; 
-
-    // Atualiza a URL no histórico do navegador SEM recarregar a página.
     window.history.replaceState({}, document.title, novaUrlLimpa);
-
-    console.log(`Chave detectada e removida da URL: ${chaveRecebida}`);
 }
 
-
-// 6. BLOQUEIO FINAL
-//    Após todas as tentativas de validação, se a variável 'acessoValidado' ainda for falsa,
-//    o acesso é bloqueado e o jogo não é carregado.
+// 5. BLOQUEIO FINAL
 if (!acessoValidado) {
-    document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;">' +
-                                 '<h1>⛔ Acesso Negado</h1>' +
-                                 '<p>Conteúdo exclusivo. Utilize o link de acesso correto para liberar o teclado.</p>' +
-                                 '</div>';
-    
-    // Impede que o restante do script (código do jogo) seja executado.
+    document.body.innerHTML = '<div style="text-align: center; padding-top: 50px;"><h1>⛔ Acesso Negado</h1><p>Conteúdo exclusivo. Utilize o link de acesso correto para liberar o teclado.</p></div>';
     throw new Error('Acesso não autorizado. Chave inválida, ausente ou expirada.'); 
 }
 
-// O restante do código do teclado será executado aqui SOMENTE se a chave for válida.
 
 // O seu código do teclado vem APÓS este bloco.
 
@@ -1161,6 +1132,7 @@ statusBox.textContent='Modo: Falante — pressione uma tecla ou clique.';
 
 </body>
 </html>
+
 
 
 
